@@ -11,6 +11,41 @@ const rowTemplate = document.getElementById("row-template");
 
 let currentUser = null;
 
+// Presentation-only labels — internal values (sent to and received from the
+// API) stay in English; only what is shown to the person using the app is
+// translated here.
+const STATUS_LABELS = { pending: "Pendente", approved: "Aprovada", rejected: "Rejeitada" };
+
+// The seed accounts' display names (src/db/seed.ts) stay in English — this
+// only maps the known ones for presentation, same principle as
+// STATUS_LABELS above.
+const USER_DISPLAY_NAMES = {
+  "Employee A": "Colaborador A",
+  "Employee B": "Colaborador B",
+  "Manager A": "Gestor A",
+  "Manager B": "Gestor B",
+};
+
+function displayName(name) {
+  return USER_DISPLAY_NAMES[name] ?? name;
+}
+
+// The HTTP/API contract (src/domain/rules.ts, src/routes/auth.ts) stays in
+// English on purpose — this only translates the known messages for display,
+// never the contract itself. An unmapped message falls back to a generic
+// PT-BR message instead of leaking English into the UI.
+const ERROR_LABELS = {
+  "invalid credentials": "E-mail ou senha inválidos.",
+  "email and password are required": "E-mail e senha são obrigatórios.",
+  "title is required": "O título é obrigatório.",
+  "category is required": "A categoria é obrigatória.",
+  "amount must be a positive number": "O valor deve ser maior que zero.",
+};
+
+function translateApiError(message) {
+  return ERROR_LABELS[message] ?? "Não foi possível concluir a operação.";
+}
+
 async function api(path, options = {}) {
   const response = await fetch(path, {
     ...options,
@@ -27,7 +62,7 @@ function showApp() {
   loginScreen.hidden = true;
   appScreen.hidden = false;
   currentUserLabel.hidden = false;
-  currentUserLabel.textContent = `Signed in as ${currentUser.name} (${currentUser.role})`;
+  currentUserLabel.textContent = `Conectado como ${displayName(currentUser.name)}`;
   logoutButton.hidden = false;
 }
 
@@ -45,13 +80,13 @@ function buildActionsCell(expense) {
   if (canManage) {
     const approveButton = document.createElement("button");
     approveButton.type = "button";
-    approveButton.textContent = "Approve";
+    approveButton.textContent = "Aprovar";
     approveButton.addEventListener("click", () => decide(expense.id, "approve"));
     cell.append(approveButton);
 
     const rejectButton = document.createElement("button");
     rejectButton.type = "button";
-    rejectButton.textContent = "Reject";
+    rejectButton.textContent = "Rejeitar";
     rejectButton.addEventListener("click", () => showRejectForm(cell, expense.id));
     cell.append(rejectButton);
   }
@@ -59,14 +94,14 @@ function buildActionsCell(expense) {
   if (canEditThis) {
     const editButton = document.createElement("button");
     editButton.type = "button";
-    editButton.textContent = "Edit";
+    editButton.textContent = "Editar";
     editButton.addEventListener("click", () => showEditForm(cell, expense));
     cell.append(editButton);
   }
 
   if (!canManage && !canEditThis && expense.status === "rejected" && expense.reason) {
     const reasonText = document.createElement("span");
-    reasonText.textContent = `Reason: ${expense.reason}`;
+    reasonText.textContent = `Motivo: ${expense.reason}`;
     cell.append(reasonText);
   }
 
@@ -78,14 +113,14 @@ function showRejectForm(cell, expenseId) {
 
   const label = document.createElement("label");
   label.setAttribute("for", `reject-reason-${expenseId}`);
-  label.textContent = "Reason";
+  label.textContent = "Motivo";
   const input = document.createElement("input");
   input.id = `reject-reason-${expenseId}`;
   input.type = "text";
 
   const confirmButton = document.createElement("button");
   confirmButton.type = "button";
-  confirmButton.textContent = "Confirm rejection";
+  confirmButton.textContent = "Confirmar rejeição";
 
   const error = document.createElement("p");
   error.setAttribute("role", "alert");
@@ -93,7 +128,7 @@ function showRejectForm(cell, expenseId) {
   confirmButton.addEventListener("click", async () => {
     const reason = input.value.trim();
     if (!reason) {
-      error.textContent = "Reason is required to reject an expense.";
+      error.textContent = "O motivo é obrigatório para rejeitar uma despesa.";
       return;
     }
     error.textContent = "";
@@ -108,14 +143,14 @@ function showEditForm(cell, expense) {
 
   const titleLabel = document.createElement("label");
   titleLabel.setAttribute("for", `edit-title-${expense.id}`);
-  titleLabel.textContent = "Title";
+  titleLabel.textContent = "Título";
   const titleInput = document.createElement("input");
   titleInput.id = `edit-title-${expense.id}`;
   titleInput.value = expense.title;
 
   const amountLabel = document.createElement("label");
   amountLabel.setAttribute("for", `edit-amount-${expense.id}`);
-  amountLabel.textContent = "Amount";
+  amountLabel.textContent = "Valor";
   const amountInput = document.createElement("input");
   amountInput.id = `edit-amount-${expense.id}`;
   amountInput.type = "number";
@@ -124,7 +159,7 @@ function showEditForm(cell, expense) {
 
   const saveButton = document.createElement("button");
   saveButton.type = "button";
-  saveButton.textContent = "Save";
+  saveButton.textContent = "Salvar";
   saveButton.addEventListener("click", async () => {
     await api(`/api/expenses/${expense.id}`, {
       method: "PATCH",
@@ -154,7 +189,7 @@ async function loadExpenses() {
     row.querySelector(".cell-title").textContent = expense.title;
     row.querySelector(".cell-category").textContent = expense.category;
     row.querySelector(".cell-amount").textContent = money(expense.amount);
-    row.querySelector(".cell-status").textContent = expense.status;
+    row.querySelector(".cell-status").textContent = STATUS_LABELS[expense.status];
     row.querySelector(".cell-actions").replaceWith(buildActionsCell(expense));
     rowsContainer.append(row);
   }
@@ -171,7 +206,7 @@ loginForm.addEventListener("submit", async (event) => {
     showApp();
     await loadExpenses();
   } catch (error) {
-    loginError.textContent = error.message;
+    loginError.textContent = translateApiError(error.message);
   }
 });
 
@@ -186,7 +221,7 @@ newExpenseForm.addEventListener("submit", async (event) => {
     newExpenseForm.reset();
     await loadExpenses();
   } catch (error) {
-    newExpenseError.textContent = error.message;
+    newExpenseError.textContent = translateApiError(error.message);
   }
 });
 

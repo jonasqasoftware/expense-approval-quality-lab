@@ -1,146 +1,156 @@
-# Test Strategy
+# Estratégia de Testes
 
-## Context
+## Contexto
 
-This lab exists to demonstrate Quality Engineering judgment with Playwright and
-TypeScript, not to build a production expense system. The system under test
-(SUT) is a small, self-contained expense-approval workflow: an employee
-submits an expense, a manager decides it. It is deliberately just large enough
-to carry real authorization and state-machine risk.
+Este laboratório existe para demonstrar julgamento de Quality Engineering com
+Playwright e TypeScript, não para construir um sistema de despesas de
+produção. O sistema sob teste (SUT) é um fluxo de aprovação de despesas
+pequeno e autocontido: um colaborador envia uma despesa, um gestor a decide.
+Ele é deliberadamente grande o suficiente, e não mais que isso, para carregar
+risco real de autorização e de máquina de estados.
 
-## Risk model
+## Modelo de risco
 
-| Risk | Why it matters |
+| Risco | Por que importa |
 |---|---|
-| Invalid amount reaches the ledger | Financial data integrity |
-| A manager approves their own expense | Segregation-of-duties / fraud control |
-| A non-manager can call the approval endpoint | Privilege escalation |
-| An employee sees another employee's expenses | Data leakage between colleagues |
-| A rejection carries no reason | No audit trail for a financial decision |
-| A decided expense can still be edited | State-machine corruption |
+| Valor inválido chega ao registro financeiro | Integridade dos dados financeiros |
+| Um gestor aprova a própria despesa | Segregação de funções / controle de fraude |
+| Um não-gestor consegue chamar o endpoint de aprovação | Escalação de privilégio |
+| Um colaborador vê despesas de outro colaborador | Vazamento de dados entre colegas |
+| Uma rejeição não carrega motivo | Sem trilha de auditoria para uma decisão financeira |
+| Uma despesa decidida ainda pode ser editada | Corrupção da máquina de estados |
 
-## Scope
+## Escopo
 
-- Authentication (session cookie, login form).
-- Expense creation, listing, approval, rejection, edit — exactly the flows
-  behind the risks above.
-- One deliberately restricted mobile check of the critical journey.
+- Autenticação (sessão via cookie, formulário de login).
+- Criação, listagem, aprovação, rejeição e edição de despesas — exatamente
+  os fluxos por trás dos riscos acima.
+- Uma checagem mobile deliberadamente restrita da jornada crítica.
 
-## Out of scope
+## Fora de escopo
 
-- Performance/load testing — already evidenced elsewhere in the portfolio
-  (`reino-do-recurso-real-api`'s k6 profile).
-- A dedicated accessibility suite — this lab uses semantic HTML and
-  role-based locators throughout, which is itself the accessibility evidence;
-  it does not duplicate the Axe suite already published in
+- Testes de performance/carga — já evidenciados em outro lugar do portfólio
+  (o perfil k6 do `reino-do-recurso-real-api`).
+- Uma suíte dedicada de acessibilidade — este laboratório usa HTML semântico
+  e locators baseados em papel/role em toda parte, o que já é a própria
+  evidência de acessibilidade; não duplica a suíte Axe já publicada no
   `reino-do-recurso-real-api`.
-- Cross-browser matrix (Firefox/WebKit) — Chromium only, by design (see
-  "Browsers" below). Easy to extend, not required to prove the strategy.
-- Visual regression, BDD/Cucumber — not this project's job; see the
-  portfolio's other labs for those angles.
+- Matriz cross-browser (Firefox/WebKit) — só Chromium, por decisão de
+  design. Fácil de estender, não necessário para provar a estratégia.
+- Regressão visual, BDD/Cucumber — não é o papel deste projeto; ver os
+  outros laboratórios do portfólio para esses ângulos.
 
-## Scenarios
+## Cenários
 
-| ID | Scenario | Risk | Layer | Priority | Why this layer |
+| ID | Cenário | Risco | Camada | Prioridade | Por que esta camada |
 |---|---|---|---|---|---|
-| S1 | Employee logs in and submits a valid expense | Broken critical path | E2E | P0 | Only the UI proves the whole journey actually works end to end |
-| S2 | An amount of zero or less is rejected | Bad financial data | API | P0 | Pure validation — cheaper and more deterministic off the UI |
-| S3 | Manager approves a pending expense | Second half of the critical path | E2E | P0 | Needs to be seen working through the real interface |
-| S4 | A manager cannot approve their own expense | Segregation of duties | API | P0 | An authorization rule, isolated from UI noise |
-| S5 | An employee cannot call the approval endpoint | Privilege escalation | API | P1 | Negative authorization test, cheap and deterministic |
-| S6 | Rejecting without a reason is blocked in the form | No audit trail | E2E | P1 | Only observable client-side — the API's own validation is covered by S4/S5's sibling assertions and is a separate concern from the form's own guard |
-| S7 | Expense listing is scoped by role/team | Data leakage | API | P1 | An authorization/read-scope rule, tested with prepared data via API |
-| S8 | A decided expense cannot be edited by its owner | State-machine corruption | E2E | P2 | Secondary path, cheap to automate, proves the UI — not just the API — respects the state machine |
+| S1 | Colaborador faz login e envia uma despesa válida | Caminho crítico quebrado | E2E | P0 | Só a UI prova que a jornada inteira realmente funciona de ponta a ponta |
+| S2 | Um valor igual ou menor que zero é rejeitado | Dado financeiro inválido | API | P0 | Validação pura — mais barata e determinística fora da UI |
+| S3 | Gestor aprova uma despesa pendente | Segunda metade do caminho crítico | E2E | P0 | Precisa ser visto funcionando pela interface real |
+| S4 | Um gestor não pode aprovar a própria despesa | Segregação de funções | API | P0 | Uma regra de autorização, isolada do ruído da UI |
+| S5 | Um colaborador não pode chamar o endpoint de aprovação | Escalação de privilégio | API | P1 | Teste negativo de autorização, barato e determinístico |
+| S6 | Rejeitar sem motivo é bloqueado no formulário | Sem trilha de auditoria | E2E | P1 | Só observável no lado cliente — a validação da própria API já é coberta pelas asserções irmãs de S4/S5, e é uma preocupação separada da guarda do próprio formulário |
+| S7 | Listagem de despesas com escopo por papel/time | Vazamento de dados | API | P1 | Uma regra de autorização/escopo de leitura, testada com dados preparados via API |
+| S8 | Uma despesa decidida não pode ser editada pelo dono | Corrupção da máquina de estados | E2E | P2 | Caminho secundário, barato de automatizar, prova que a UI — não só a API — respeita a máquina de estados |
 
 ## API vs E2E
 
-Every rule that can be proven without a browser is proven without one:
-validation (S2), authorization (S4, S5, S7). The only things that stay E2E are
-things that are *only* observable in the interface: the full login-to-submit
-journey (S1), the approval button actually updating what the user sees (S3),
-a form blocking an empty required field before any request is sent (S6), and
-a control simply not being offered once a state transition has happened (S8).
-No scenario is tested twice across both layers for the same reason.
+Toda regra que pode ser provada sem um browser é provada sem um: validação
+(S2), autorização (S4, S5, S7). As únicas coisas que permanecem E2E são
+coisas *só* observáveis na interface: a jornada completa de login até envio
+(S1), o botão de aprovação de fato atualizando o que o usuário vê (S3), um
+formulário bloqueando um campo obrigatório vazio antes de qualquer
+requisição ser enviada (S6), e um controle simplesmente não sendo oferecido
+depois que uma transição de estado aconteceu (S8). Nenhum cenário é testado
+duas vezes nas duas camadas pelo mesmo motivo.
 
-## Test data
+## Dados de teste
 
-Four **fixed, seeded** accounts (`manager-a`, `manager-b`, `employee-a` →
-manages under `manager-a`, `employee-b` → manages under `manager-b`) exist for
-the whole run — see `src/db/seed.ts`. They are not created per test. Tests
-create their own **expenses** via the API before exercising a journey, using
-short, descriptive, fixed titles ("Client dinner", "Unjustified software
-license") instead of randomly generated data — a reviewer should be able to
-read a test and immediately know what it is asserting, and a fixed name never
-introduces its own flakiness.
+Quatro contas **fixas e semeadas** (`manager-a`, `manager-b`, `employee-a` →
+gerenciada por `manager-a`, `employee-b` → gerenciada por `manager-b`)
+existem durante toda a execução — ver `src/db/seed.ts`. Elas não são criadas
+por teste. Os testes criam suas próprias **despesas** via API antes de
+exercitar uma jornada, usando títulos curtos, descritivos e fixos ("Client
+dinner", "Unjustified software license") em vez de dados gerados
+aleatoriamente — quem revisa deve conseguir ler um teste e entender
+imediatamente o que ele está afirmando, e um nome fixo nunca introduz sua
+própria flakiness.
 
-## Authentication
+## Autenticação
 
-A cookie-based session is used. API tests authenticate their own
-`APIRequestContext` per fixture (`playwright/fixtures/api.ts` —
-`employeeApi`, `managerApi`, `otherManagerApi`), each logging in once and
-reusing that context for every call. E2E tests avoid repeating a UI login
-before every test: a `setup` project (`tests/setup/auth.setup.ts`) logs in
-once per role and saves `storageState` to `playwright/.auth/*.json` (git­
-ignored — session cookies must never be committed, even for synthetic
-accounts). S1 is the deliberate exception: logging in through the real form
-*is* part of its story, so it does not use `storageState`.
+Usa-se sessão baseada em cookie. Os testes de API autenticam seu próprio
+`APIRequestContext` por fixture (`playwright/fixtures/api.ts` —
+`employeeApi`, `managerApi`, `otherManagerApi`), cada uma fazendo login uma
+vez e reutilizando esse contexto em toda chamada. Os testes E2E evitam
+repetir um login pela UI antes de cada teste: um project `setup`
+(`tests/setup/auth.setup.ts`) faz login uma vez por papel e salva o
+`storageState` em `playwright/.auth/*.json` (ignorado pelo Git — cookies de
+sessão nunca devem ser commitados, mesmo para contas sintéticas). S1 é a
+exceção deliberada: fazer login pelo formulário real *é* parte da sua
+história, então ele não usa `storageState`.
 
-## Isolation
+## Isolamento
 
-Every test creates the specific records it needs before asserting against
-them, and assertions check "does my record behave correctly" rather than
-"is the list exactly N items long" — so tests remain correct even when the
-shared database accumulates rows from other tests in the same run. No test
-depends on another test having run first.
+Todo teste cria os registros específicos de que precisa antes de fazer
+asserções sobre eles, e as asserções checam "meu registro se comporta
+corretamente" em vez de "a lista tem exatamente N itens" — assim os testes
+continuam corretos mesmo quando o banco compartilhado acumula linhas de
+outros testes na mesma execução. Nenhum teste depende de outro ter rodado
+antes.
 
-## Parallelism
+## Paralelismo
 
-`workers: 1` for the whole suite, on purpose. The SUT is a single Express
-process backed by one SQLite file started once by Playwright's `webServer`
-for the entire run — not per project. Turning on `fullyParallel` before
-proving isolation would risk exactly the kind of shared-state flakiness this
-lab is supposed to demonstrate *avoiding*. A per-worker database (in-memory
-per worker, or a schema-per-worker convention) is the natural next step if
-parallel execution is ever needed — **FUTURE CANDIDATE**, not required to
-prove this strategy.
+`workers: 1` para toda a suíte, de propósito. O SUT é um único processo
+Express apoiado por um único arquivo SQLite, iniciado uma vez pelo
+`webServer` do Playwright para toda a execução — não por project. Ativar
+`fullyParallel` antes de provar isolamento arriscaria exatamente o tipo de
+flakiness por estado compartilhado que este laboratório deveria demonstrar
+*evitar*. Um banco por worker (em memória por worker, ou uma convenção de
+schema por worker) é o próximo passo natural se execução paralela for
+necessária algum dia — **FUTURE CANDIDATE**, não necessário para provar
+esta estratégia.
 
-One direct consequence: because the server and database persist across the
-whole `playwright test` invocation, running the *same* scenario file on two
-different projects (see "Mobile" below) would otherwise create two rows with
-an identical title. `create-expense.spec.ts` and `approve-expense.spec.ts`
-avoid that by composing the expense title from `testInfo.project.name`
-(e.g. `"Airport taxi — mobile-critical"`), so each project's run of the
-scenario creates a row that is unique by construction — no positional
-locator (`.first()`, `.last()`, `.nth()`) is needed, and the isolation
-principle from the paragraph above ("every test creates the specific record
-it needs") holds even across projects, not just across tests.
+Uma consequência direta: como o servidor e o banco persistem durante toda a
+invocação do `playwright test`, rodar o *mesmo* arquivo de cenário em dois
+projects diferentes (ver "Mobile" abaixo) criaria, de outra forma, duas
+linhas com título idêntico. `create-expense.spec.ts` e
+`approve-expense.spec.ts` evitam isso compondo o título da despesa a partir
+de `testInfo.project.name` (ex.: `"Airport taxi — mobile-critical"`), então
+a execução do cenário em cada project cria uma linha única por construção —
+nenhum locator posicional (`.first()`, `.last()`, `.nth()`) é necessário, e
+o princípio de isolamento do parágrafo acima ("todo teste cria o registro
+específico de que precisa") vale mesmo entre projects, não só entre testes.
 
 ## Mobile
 
-A `mobile-critical` project (Pixel 5 viewport) reruns only the two P0 E2E
-scenarios that together make up the critical path (S1, S3) — not the whole
-suite. It exists to prove the journey is usable on a small viewport, not to
-double test coverage. Building it surfaced a real responsive bug (the
-expenses table had no overflow handling, so the Approve button was
-unreachable on a narrow viewport) — fixed by wrapping the table in a
-horizontally scrollable container (`src/public/styles.css`, `.table-scroll`).
+Um project `mobile-critical` (viewport Pixel 5) reexecuta só os dois
+cenários E2E P0 que juntos formam o caminho crítico (S1, S3) — não a suíte
+inteira. Ele existe para provar que a jornada é utilizável em uma viewport
+pequena, não para dobrar a cobertura de testes. Construí-lo revelou um bug
+real de responsividade (a tabela de despesas não tinha tratamento de
+overflow, então o botão Aprovar ficava inalcançável em uma viewport
+estreita) — corrigido envolvendo a tabela em um contêiner com rolagem
+horizontal (`src/public/styles.css`, `.table-scroll`).
 
-## Flakiness
+## Estratégia contra flakiness
 
-Verified by static search (no `waitForTimeout`, no CSS class/`nth`/XPath
-locators, no test depends on another) and empirically: the full suite (API +
-E2E, both projects) was run three consecutive times with zero flaky results
-before this lab was called done.
+Verificado por busca estática (nenhum `waitForTimeout`, nenhum locator de
+classe CSS/`nth`/XPath, nenhum teste depende de outro) e empiricamente: a
+suíte completa (API + E2E, ambos os projects) rodou três vezes consecutivas
+com zero resultados intermitentes antes deste laboratório ser considerado
+pronto.
 
 ## CI
 
-GitHub Actions runs, in order: `typecheck`, `lint`, `test:api`, `test:e2e`.
-Each gate is independent so a CI failure immediately says which layer broke
-without needing to open the HTML report. The report and any trace/screenshot/
-video are uploaded only when a run has failures.
+O GitHub Actions roda, em ordem: `typecheck`, `lint`, `test:api`,
+`test:e2e`. Cada gate é independente, então uma falha de CI diz
+imediatamente qual camada quebrou, sem precisar abrir o relatório HTML. O
+relatório e qualquer trace/screenshot/video são enviados como artefato só
+quando uma execução tem falhas.
 
-## Exit criteria
+## Critérios de saída
 
-All 8 scenarios green, `typecheck` and `lint` clean, three consecutive full
-local runs green, no anti-pattern found in the static scan above, and no
-secret or credential (real or realistic-looking) anywhere in the repository.
+Os 8 cenários verdes, `typecheck` e `lint` limpos, três execuções locais
+completas consecutivas verdes, nenhum anti-pattern encontrado na varredura
+estática acima, e nenhum segredo ou credencial (real ou com aparência real)
+em qualquer lugar do repositório.

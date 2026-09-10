@@ -9,17 +9,17 @@ import { accounts, type SeedAccount } from "../../playwright/fixtures/accounts.j
  */
 async function loginAndSave(page: Page, account: SeedAccount, path: string) {
   await page.goto("/");
-  await page.getByLabel("Email").fill(account.email);
-  await page.getByLabel("Password").fill(account.password);
-  await page.getByRole("button", { name: "Log in" }).click();
-  await expect(page.getByText(`Signed in as ${account.name}`)).toBeVisible();
+  await page.getByLabel("E-mail").fill(account.email);
+  await page.getByLabel("Senha").fill(account.password);
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await expect(page.getByText(`Conectado como ${account.displayName}`)).toBeVisible();
   await page.context().storageState({ path });
 }
 
-setup("authenticate as employee", async ({ page }) => {
+setup("autentica como colaborador", async ({ page }) => {
   await loginAndSave(page, accounts.employeeA, "playwright/.auth/employee.json");
 });
 
-setup("authenticate as manager", async ({ page }) => {
+setup("autentica como gestor", async ({ page }) => {
   await loginAndSave(page, accounts.managerA, "playwright/.auth/manager.json");
 });
