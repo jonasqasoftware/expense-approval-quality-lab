@@ -1,7 +1,7 @@
 import { test, expect } from "../../playwright/fixtures/api.js";
 
-test.describe("S2 — expense creation validates amount", () => {
-  test("an amount of zero or less is rejected", async ({ employeeApi }) => {
+test.describe("S2 — criação de despesa valida o valor", () => {
+  test("um valor igual ou menor que zero é rejeitado", async ({ employeeApi }) => {
     const response = await employeeApi.post("/api/expenses", {
       data: { title: "Broken laptop charger", amount: 0, category: "Equipment" },
     });
@@ -9,7 +9,7 @@ test.describe("S2 — expense creation validates amount", () => {
     expect((await response.json()).error).toMatch(/positive number/);
   });
 
-  test("a valid amount is accepted", async ({ employeeApi }) => {
+  test("um valor válido é aceito", async ({ employeeApi }) => {
     const response = await employeeApi.post("/api/expenses", {
       data: { title: "Conference ticket", amount: 350, category: "Training" },
     });
@@ -19,8 +19,8 @@ test.describe("S2 — expense creation validates amount", () => {
   });
 });
 
-test.describe("S4 — a manager cannot decide their own expense", () => {
-  test("approval of a self-submitted expense is blocked", async ({ managerApi }) => {
+test.describe("S4 — um gestor não pode decidir a própria despesa", () => {
+  test("aprovação de uma despesa autossubmetida é bloqueada", async ({ managerApi }) => {
     const created = await managerApi.post("/api/expenses", {
       data: { title: "Manager's own travel", amount: 200, category: "Travel" },
     });
@@ -32,8 +32,8 @@ test.describe("S4 — a manager cannot decide their own expense", () => {
   });
 });
 
-test.describe("S5 — only a manager may decide an expense", () => {
-  test("an employee calling the approval endpoint is rejected", async ({ employeeApi, managerApi }) => {
+test.describe("S5 — só um gestor pode decidir uma despesa", () => {
+  test("um colaborador chamando o endpoint de aprovação é rejeitado", async ({ employeeApi, managerApi }) => {
     const created = await employeeApi.post("/api/expenses", {
       data: { title: "Team lunch", amount: 80, category: "Meals" },
     });
@@ -43,15 +43,15 @@ test.describe("S5 — only a manager may decide an expense", () => {
     expect(attempt.status()).toBe(403);
     expect((await attempt.json()).error).toMatch(/only a manager/);
 
-    // Clean assertion that the record is untouched by the rejected attempt.
+    // Asserção limpa de que o registro permanece intocado pela tentativa rejeitada.
     const still = await managerApi.get("/api/expenses");
     const record = (await still.json()).expenses.find((e: { id: number }) => e.id === expense.id);
     expect(record.status).toBe("pending");
   });
 });
 
-test.describe("S7 — expense listing is scoped by role", () => {
-  test("an employee sees only their own expenses", async ({ employeeApi }) => {
+test.describe("S7 — listagem de despesas com escopo por papel", () => {
+  test("um colaborador vê somente as próprias despesas", async ({ employeeApi }) => {
     const created = await employeeApi.post("/api/expenses", {
       data: { title: "Employee scoped expense", amount: 42, category: "Supplies" },
     });
@@ -64,7 +64,7 @@ test.describe("S7 — expense listing is scoped by role", () => {
     expect(expenses.every((e: { userId: number }) => e.userId === own.userId)).toBe(true);
   });
 
-  test("a manager does not see expenses from a team they do not manage", async ({
+  test("um gestor não vê despesas de um time que não gerencia", async ({
     employeeApi,
     managerApi,
     otherManagerApi,
@@ -83,7 +83,7 @@ test.describe("S7 — expense listing is scoped by role", () => {
     expect(otherIds).not.toContain(expense.id);
   });
 
-  test("a manager outside the reporting line cannot approve the expense either", async ({
+  test("um gestor fora da linha de reporte também não pode aprovar a despesa", async ({
     employeeApi,
     otherManagerApi,
   }) => {

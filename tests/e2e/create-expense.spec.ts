@@ -11,23 +11,23 @@ import { accounts } from "../../playwright/fixtures/accounts.js";
  * (see docs/TEST_STRATEGY.md, "Mobile") — that keeps the row this test just
  * created unambiguous, without relying on row order or a positional locator.
  */
-test("employee logs in and submits a valid expense", async ({ page }, testInfo) => {
-  const title = `Airport taxi — ${testInfo.project.name}`;
+test("colaborador faz login e envia uma despesa válida", async ({ page }, testInfo) => {
+  const title = `Táxi para o aeroporto — ${testInfo.project.name}`;
 
   await page.goto("/");
 
-  await page.getByLabel("Email").fill(accounts.employeeA.email);
-  await page.getByLabel("Password").fill(accounts.employeeA.password);
-  await page.getByRole("button", { name: "Log in" }).click();
+  await page.getByLabel("E-mail").fill(accounts.employeeA.email);
+  await page.getByLabel("Senha").fill(accounts.employeeA.password);
+  await page.getByRole("button", { name: "Entrar" }).click();
 
-  await expect(page.getByText(`Signed in as ${accounts.employeeA.name}`)).toBeVisible();
+  await expect(page.getByText(`Conectado como ${accounts.employeeA.displayName}`)).toBeVisible();
 
-  await page.getByLabel("Title").fill(title);
-  await page.getByLabel("Amount").fill("64.90");
-  await page.getByLabel("Category").fill("Travel");
-  await page.getByRole("button", { name: "Submit expense" }).click();
+  await page.getByLabel("Título").fill(title);
+  await page.getByLabel("Valor").fill("64.90");
+  await page.getByLabel("Categoria").fill("Travel");
+  await page.getByRole("button", { name: "Enviar despesa" }).click();
 
   const row = page.getByRole("row", { name: title });
   await expect(row).toBeVisible();
-  await expect(row).toContainText("pending");
+  await expect(row).toContainText("Pendente");
 });

@@ -13,8 +13,8 @@ import { test, expect } from "../../playwright/fixtures/api.js";
  */
 test.use({ storageState: "playwright/.auth/manager.json" });
 
-test("manager approves a pending expense and sees the status update", async ({ page, employeeApi }, testInfo) => {
-  const title = `Client site visit — ${testInfo.project.name}`;
+test("gestor aprova uma despesa pendente e vê o status ser atualizado", async ({ page, employeeApi }, testInfo) => {
+  const title = `Visita ao cliente — ${testInfo.project.name}`;
 
   const created = await employeeApi.post("/api/expenses", {
     data: { title, amount: 210, category: "Travel" },
@@ -24,9 +24,9 @@ test("manager approves a pending expense and sees the status update", async ({ p
   await page.goto("/");
 
   const row = page.getByRole("row", { name: title });
-  await expect(row).toContainText("pending");
+  await expect(row).toContainText("Pendente");
 
-  await row.getByRole("button", { name: "Approve" }).click();
+  await row.getByRole("button", { name: "Aprovar" }).click();
 
-  await expect(row).toContainText("approved");
+  await expect(row).toContainText("Aprovada");
 });

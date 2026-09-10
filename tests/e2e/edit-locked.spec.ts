@@ -7,9 +7,9 @@ import { test, expect } from "../../playwright/fixtures/api.js";
  */
 test.use({ storageState: "playwright/.auth/employee.json" });
 
-test("an already-decided expense cannot be edited by its owner", async ({ page, employeeApi, managerApi }) => {
+test("uma despesa já decidida não pode ser editada pelo dono", async ({ page, employeeApi, managerApi }) => {
   const created = await employeeApi.post("/api/expenses", {
-    data: { title: "Decided expense for edit check", amount: 30, category: "Meals" },
+    data: { title: "Despesa decidida para checagem de edição", amount: 30, category: "Meals" },
   });
   const { expense } = await created.json();
 
@@ -18,7 +18,7 @@ test("an already-decided expense cannot be edited by its owner", async ({ page, 
 
   await page.goto("/");
 
-  const row = page.getByRole("row", { name: /Decided expense for edit check/ });
-  await expect(row).toContainText("approved");
-  await expect(row.getByRole("button", { name: "Edit" })).toHaveCount(0);
+  const row = page.getByRole("row", { name: /Despesa decidida para checagem de edição/ });
+  await expect(row).toContainText("Aprovada");
+  await expect(row.getByRole("button", { name: "Editar" })).toHaveCount(0);
 });

@@ -8,18 +8,18 @@ import { test, expect } from "../../playwright/fixtures/api.js";
  */
 test.use({ storageState: "playwright/.auth/manager.json" });
 
-test("rejecting without a reason is blocked in the form", async ({ page, employeeApi }) => {
+test("rejeitar sem motivo é bloqueado no formulário", async ({ page, employeeApi }) => {
   const created = await employeeApi.post("/api/expenses", {
-    data: { title: "Unjustified software license", amount: 99, category: "Software" },
+    data: { title: "Licença de software sem justificativa", amount: 99, category: "Software" },
   });
   expect(created.status()).toBe(201);
 
   await page.goto("/");
 
-  const row = page.getByRole("row", { name: /Unjustified software license/ });
-  await row.getByRole("button", { name: "Reject" }).click();
-  await row.getByRole("button", { name: "Confirm rejection" }).click();
+  const row = page.getByRole("row", { name: /Licença de software sem justificativa/ });
+  await row.getByRole("button", { name: "Rejeitar" }).click();
+  await row.getByRole("button", { name: "Confirmar rejeição" }).click();
 
-  await expect(row.getByRole("alert")).toHaveText("Reason is required to reject an expense.");
-  await expect(row).toContainText("pending");
+  await expect(row.getByRole("alert")).toHaveText("O motivo é obrigatório para rejeitar uma despesa.");
+  await expect(row).toContainText("Pendente");
 });
