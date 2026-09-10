@@ -1,0 +1,35 @@
+{
+  "name": "expense-approval-quality-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Quality Engineering lab: a small expense-approval system tested end-to-end and at the API layer with Playwright + TypeScript.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "seed": "tsx src/db/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test:api": "playwright test --project=api",
+    "test:e2e": "playwright test --project=e2e --project=mobile-critical",
+    "test": "npm run test:api && npm run test:e2e"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^4.17.23",
+    "@types/node": "^22.15.0",
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0"
+  }
+}

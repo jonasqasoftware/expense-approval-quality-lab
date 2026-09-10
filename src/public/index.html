@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Expense Approval Quality Lab</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Expense Approval Quality Lab</h1>
+    <p id="current-user" hidden></p>
+    <button id="logout-button" type="button" hidden>Log out</button>
+  </header>
+
+  <main>
+    <section id="login-screen" aria-label="Login">
+      <h2>Log in</h2>
+      <form id="login-form">
+        <div>
+          <label for="login-email">Email</label>
+          <input id="login-email" name="email" type="email" required autocomplete="username" />
+        </div>
+        <div>
+          <label for="login-password">Password</label>
+          <input id="login-password" name="password" type="password" required autocomplete="current-password" />
+        </div>
+        <button type="submit">Log in</button>
+        <p id="login-error" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="app-screen" hidden>
+      <h2>New expense</h2>
+      <form id="new-expense-form">
+        <div>
+          <label for="new-title">Title</label>
+          <input id="new-title" name="title" type="text" required />
+        </div>
+        <div>
+          <label for="new-amount">Amount</label>
+          <input id="new-amount" name="amount" type="number" step="0.01" required />
+        </div>
+        <div>
+          <label for="new-category">Category</label>
+          <input id="new-category" name="category" type="text" required />
+        </div>
+        <button type="submit">Submit expense</button>
+        <p id="new-expense-error" role="alert"></p>
+      </form>
+
+      <h2>Expenses</h2>
+      <div class="table-scroll">
+        <table>
+          <caption>Your expenses</caption>
+          <thead>
+            <tr>
+              <th scope="col">Title</th>
+              <th scope="col">Category</th>
+              <th scope="col">Amount</th>
+              <th scope="col">Status</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="expense-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <template id="row-template">
+    <tr>
+      <td class="cell-title"></td>
+      <td class="cell-category"></td>
+      <td class="cell-amount"></td>
+      <td class="cell-status"></td>
+      <td class="cell-actions"></td>
+    </tr>
+  </template>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

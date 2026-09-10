@@ -1,0 +1,20 @@
+node_modules/
+dist/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Playwright authenticated session state — may contain session cookies/tokens, never commit
+/playwright/.auth/*.json
+
+# local SQLite files
+/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+.env
+.env.local
